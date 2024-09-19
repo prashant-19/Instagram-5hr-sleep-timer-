@@ -8,7 +8,14 @@ import socket
 def download_profile(loader, username):
     try:
         print(f"Attempting to download profile: {username}")
-        loader.download_profile(username, profile_pic_only=False)
+
+        
+        loader.resume_prefix = username  
+        loader.post_metadata_txt_pattern = ""  
+        loader.save_metadata = False  
+
+        loader.download_profile(username, profile_pic_only=False, fast_update=True)
+        
         print(f"Successfully downloaded profile: {username}")
         return True
     except TooManyRequestsException:
