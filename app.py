@@ -15,8 +15,13 @@ def download_profile(loader, username):
         loader.save_metadata = False  
 
         loader.download_profile(username, profile_pic_only=False, fast_update=True)
-        
         print(f"Successfully downloaded profile: {username}")
+
+        resume_file = f"{username}.json.xz"
+        if os.path.exists(resume_file):
+            os.remove(resume_file)
+            print(f"Removed resume file for {username}")
+
         return True
     except TooManyRequestsException:
         print("Rate limit reached, sleeping for 5 hours.")
