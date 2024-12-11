@@ -6,7 +6,7 @@ import os
 from instaloader.exceptions import TooManyRequestsException, ProfileNotExistsException
 import socket
 
-START_DATE = datetime(2024,11,7)  # Example: datetime(2023, 1, 1) or None
+START_DATE = None  # Example: datetime(2023, 1, 1) or None
 END_DATE = None    # Example: datetime(2024, 1, 1) or None
 
 def download_profile(loader, username):
@@ -96,6 +96,6 @@ def download_profiles_with_rate_limiting(usernames):
         zip_profile(username) 
 
 if __name__ == "__main__":
-    usernames = ["anshikax"]
+    usernames = ["appliviu"]
 
     download_profiles_with_rate_limiting(usernames)
