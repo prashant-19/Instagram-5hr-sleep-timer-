@@ -1,27 +1,56 @@
 import instaloader
+from datetime import datetime
 import time
 import shutil
 import os
 from instaloader.exceptions import TooManyRequestsException, ProfileNotExistsException
 import socket
 
+START_DATE = datetime(2024,11,7)  # Example: datetime(2023, 1, 1) or None
+END_DATE = None    # Example: datetime(2024, 1, 1) or None
+
 def download_profile(loader, username):
     try:
         print(f"Attempting to download profile: {username}")
-
         
         loader.resume_prefix = username  
-        loader.post_metadata_txt_pattern = ""  
+        loader.post_metadata_txt_pattern = "" 
         loader.save_metadata = False  
+        
+        profile = instaloader.Profile.from_username(loader.context, username)
+        
+        for post in profile.get_posts():
+            post_date = post.date
 
-        loader.download_profile(username, profile_pic_only=False, fast_update=True)
+            if START_DATE and END_DATE:
+                if START_DATE <= post_date <= END_DATE:
+                    print(f"Downloading post from {post_date}: {post.url}")
+                    loader.download_post(post, target=username)
+                else:
+                    print(f"Skipping post from {post_date}, outside of date range.")
+            elif START_DATE:
+                if post_date >= START_DATE:
+                    print(f"Downloading post from {post_date}: {post.url}")
+                    loader.download_post(post, target=username)
+                else:
+                    print(f"Skipping post from {post_date}, before START_DATE.")
+            elif END_DATE:
+                if post_date <= END_DATE:
+                    print(f"Downloading post from {post_date}: {post.url}")
+                    loader.download_post(post, target=username)
+                else:
+                    print(f"Skipping post from {post_date}, after END_DATE.")
+            else:
+                print(f"Downloading post from {post_date}: {post.url}")
+                loader.download_post(post, target=username)
+                
         print(f"Successfully downloaded profile: {username}")
-
+        
         resume_file = f"{username}.json.xz"
         if os.path.exists(resume_file):
             os.remove(resume_file)
             print(f"Removed resume file for {username}")
-
+            
         return True
     except TooManyRequestsException:
         print("Rate limit reached, sleeping for 5 hours.")
@@ -61,14 +90,12 @@ def download_profiles_with_rate_limiting(usernames):
             success = download_profile(loader, username)
             if not success:
                 print(f"Sleeping for 5 hours before retrying profile: {username}")
-                for i in range(5 * 60 * 60):
-                    print(f"Sleeping... {i+1} seconds", end='\r')  
-                    time.sleep(1)  
+                time.sleep(5 * 60 * 60)  # Sleep for 5 hours
         
         print(f"Completed downloading profile: {username}")
         zip_profile(username) 
 
 if __name__ == "__main__":
-    usernames = ["appliviu"]
+    usernames = ["anshikax"]
 
     download_profiles_with_rate_limiting(usernames)
