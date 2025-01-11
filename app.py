@@ -9,6 +9,17 @@ import socket
 START_DATE = None  # Example: datetime(2023, 1, 1) or None
 END_DATE = None    # Example: datetime(2024, 1, 1) or None
 
+COMPLETED_PROFILES_FILE = "completed_profiles.txt"
+FAILED_PROFILES_FILE = "failed_profiles.txt"
+
+def add_to_file(filename, username):
+    try:
+        with open(filename, "a") as file:
+            file.write(username + "\n")
+        print(f"Added {username} to {filename}")
+    except Exception as e:
+        print(f"Error writing to {filename}: {e}")
+
 def download_profile(loader, username):
     try:
         print(f"Attempting to download profile: {username}")
@@ -57,7 +68,7 @@ def download_profile(loader, username):
         return False
     except ProfileNotExistsException:
         print(f"Profile {username} does not exist.")
-        return True
+        return False
     except (socket.timeout, TimeoutError):
         print("Timeout occurred, sleeping for 5 hours.")
         return False  
@@ -68,7 +79,7 @@ def download_profile(loader, username):
             return False  
         else:
             print(f"Error downloading profile {username}: {error_message}")
-            return True 
+            return False 
 
 def zip_profile(username):
     profile_dir = f"./{username}"  
@@ -78,8 +89,10 @@ def zip_profile(username):
         print(f"Zipping profile: {username}")
         shutil.make_archive(f"./{username}", 'zip', profile_dir)  
         print(f"Profile {username} successfully zipped as {zip_filename}")
+        return True
     else:
         print(f"Directory {profile_dir} not found, unable to zip profile.")
+        return False
 
 def download_profiles_with_rate_limiting(usernames):
     loader = instaloader.Instaloader()
@@ -92,10 +105,17 @@ def download_profiles_with_rate_limiting(usernames):
                 print(f"Sleeping for 5 hours before retrying profile: {username}")
                 time.sleep(5 * 60 * 60)  # Sleep for 5 hours
         
-        print(f"Completed downloading profile: {username}")
-        zip_profile(username) 
+        if success and zip_profile(username):
+            add_to_file(COMPLETED_PROFILES_FILE, username)
+        else:
+            add_to_file(FAILED_PROFILES_FILE, username)
 
 if __name__ == "__main__":
     usernames = ["appliviu"]
+
+    # Ensure the files exist
+    for file in [COMPLETED_PROFILES_FILE, FAILED_PROFILES_FILE]:
+        if not os.path.exists(file):
+            open(file, "w").close()
 
     download_profiles_with_rate_limiting(usernames)
